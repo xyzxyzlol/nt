@@ -3,67 +3,22 @@
 
 <head>
     <title>Pierce Stats</title>
-    <style>
-        .ear-container {
-            position: relative;
-            display: inline-block;
-            width: 350px;
-            height: 350px;
-            vertical-align: top;
-        }
+    <link rel="stylesheet" href="index.css">
 
-        .ear-container img {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .ear-overlay {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        .ear-overlay circle {
-            fill: rgba(0, 0, 0, 0.35);
-            stroke: rgb(0, 0, 0);
-            stroke-width: 3;
-            cursor: pointer;
-        }
-
-        .ear-overlay circle:hover {
-            fill: rgba(39, 22, 189, 0.7);
-        }
-
-        #infodiv {
-            white-space: pre-line;
-            background-color: rgb(49, 248, 255);
-            min-height: 100px;
-            margin-bottom: 20px;
-            overflow-wrap: anywhere;
-        }
-
-        #info {
-            font-size: 100px;
-        }
-
-        #jsonUpload {
-            display: block;
-            margin-top: 20px;
-        }
-    </style>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
+
     <div class="ear-container">
         <img src="left_ear.png" alt="Left ear">
 
         <svg class="ear-overlay" viewBox="0 0 350 350">
-            <circle cx="230" cy="300" r="18" onclick="writee('infoprimulst')" />
+            <circle cx="230" cy="300" r="18"
+                onclick="writee('infoprimulst')" />
 
-            <circle cx="197" cy="278" r="18" onclick="writee('infoaldoileast')" />
+            <circle cx="197" cy="278" r="18"
+                onclick="writee('infoaldoileast')" />
         </svg>
     </div>
 
@@ -71,51 +26,94 @@
         <img src="right_ear.png" alt="Right ear">
 
         <svg class="ear-overlay" viewBox="0 0 350 350">
-            <circle cx="127" cy="300" r="18" onclick="writee('infoprimuldr')" />
+            <circle cx="127" cy="300" r="18"
+                onclick="writee('infoprimuldr')" />
 
-            <circle cx="157" cy="257" r="18" onclick="writee('infoaldoileadr')" />
+            <circle cx="157" cy="257" r="18"
+                onclick="writee('infoaldoileadr')" />
         </svg>
     </div>
+
     <div id="infodiv">
         <p id="info">hi</p>
+
+        <div id="dateControls" style="display: none;">
+            <label for="newDate">
+                <strong>submit date?</strong>
+            </label>
+
+            <br>
+
+            <input
+                type="text"
+                id="newDate"
+                placeholder="e.g. 1.6mm_23.10.2026"
+            >
+
+            <br>
+
+            <button type="button" onclick="addDate()">
+                Add date
+            </button>
+        </div>
+
+        <p id="status"></p>
     </div>
-    <input type="file" id="jsonUpload" accept=".json,application/json">
+
+    <input
+        type="file"
+        id="jsonUpload"
+        accept=".json,application/json"
+    >
+
+    <button
+        type="button"
+        id="downloadButton"
+        onclick="downloadJSON()"
+        disabled
+    >
+        Download updated JSON
+    </button>
+
     <script>
         let files = {};
         let filesLoaded = false;
-        let selected_id;
+        let selected_id = null;
 
-        document.getElementById("jsonUpload").addEventListener("change", async function (event) {
-            const file = event.target.files[0];
+        const infoElement = document.getElementById("info");
+        const statusElement = document.getElementById("status");
+        const dateControls = document.getElementById("dateControls");
+        const newDateInput = document.getElementById("newDate");
+        const downloadButton = document.getElementById("downloadButton");
 
-            if (!file) return;
+        // Upload JSON
+        document.getElementById("jsonUpload").addEventListener(
+            "change",
+            async function (event) {
+                const file = event.target.files[0];
 
-            try {
+                if (!file) return;
+
                 const text = await file.text();
-                const data = JSON.parse(text);
-
-                if (typeof data !== "object" || data === null || Array.isArray(data)) {
-                    throw new Error("JSON must contain an object with piercing IDs.");
-                }
-
-                files = data;
+                files = JSON.parse(text);
                 filesLoaded = true;
 
-                console.log("Uploaded JSON:", files);
-                alert("JSON loaded successfully!");
+                downloadButton.disabled = false;
 
-                // Refresh the displayed information if a piercing is selected
+                alert("loaded");
+
                 if (selected_id) {
                     writee(selected_id);
+                } else {
+                    infoElement.textContent = "hi";
+                    dateControls.style.display = "none";
                 }
-            } catch (error) {
-                console.error("Failed to load JSON:", error);
-                alert("Invalid JSON file!");
+
+                event.target.value = "";
             }
+        );
 
-            event.target.value = "";
-        });
-
+        // Display information for the selected piercing.
         function writee(id) {
             if (!filesLoaded) {
                 alert("Upload your JSON file first!");
@@ -124,37 +122,88 @@
 
             const pierce = files[id];
 
-            if (!pierce) {
-                console.error("ID not found:", id);
-                return;
-            }
+            selected_id = id;
 
             document.getElementById("infodiv").style.display = "block";
-            const lastDate = pierce.date[pierce.date.length - 1];
-            const [size, dateStr] = lastDate.split("_");
+            dateControls.style.display = "block";
 
-            const [day, month, year] = dateStr.split(".").map(Number);
+            newDateInput.value = "";
+            statusElement.textContent = "";
 
-            // Build dates using UTC to avoid timezone issues
-            const startDate = new Date(Date.UTC(year, month - 1, day));
-            const today = new Date();
+            let timeWornText = "Unknown";
 
-            const todayUTC = Date.UTC(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate()
+            if (pierce.date.length > 0) {
+                const lastDate = pierce.date[pierce.date.length - 1];
+                const parts = lastDate.split("_");
+                const dateStr = parts[1];
+
+                const [day, month, year] =
+                    dateStr.split(".").map(Number);
+
+                const startDate = new Date(
+                    Date.UTC(year, month - 1, day)
+                );
+
+                const today = new Date();
+
+                const todayUTC = Date.UTC(
+                    today.getFullYear(),
+                    today.getMonth(),
+                    today.getDate()
+                );
+
+                const timeWorn = Math.round(
+                    (todayUTC - startDate.getTime()) /
+                    (1000 * 60 * 60 * 24)
+                );
+
+                timeWornText = timeWorn + " days";
+            }
+
+            infoElement.textContent =
+                `${pierce.name || id}\n` +
+                `Date: ${pierce.date.join(", ")}\n` +
+                `Size: ${pierce.size ?? "Unknown"}\n` +
+                `Time worn: ${timeWornText}`;
+        }
+
+        // Add a date to the selected piercing.
+        function addDate() {
+            const inputString = newDateInput.value.trim();
+
+            files[selected_id].date.push(inputString);
+
+            writee(selected_id);
+
+            alert("added")
+
+            newDateInput.value = "";
+        }
+
+        // Download the updated JSON.
+        function downloadJSON() {
+            const jsonString = JSON.stringify(files, null, 4);
+
+            const blob = new Blob(
+                [jsonString],
+                { type: "application/json" }
             );
 
-            const timeWorn = Math.round(
-                (todayUTC - startDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
+            const url = URL.createObjectURL(blob);
 
-            document.getElementById("info").textContent =
-                `${pierce.name}\nDate: ${pierce.date.join(", ")}\nSize: ${pierce.size}\nTime worn: ${timeWorn} days`;
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "pierce_stats.json";
 
-            selected_id = id;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            URL.revokeObjectURL(url);
+
+            alert("downloaded");
         }
     </script>
-</body>
 
+</body>
 </html>

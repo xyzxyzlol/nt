@@ -1,0 +1,80 @@
+.ear-container {
+            position: relative;
+            display: inline-block;
+            width: 350px;
+            height: 350px;
+            vertical-align: top;
+        }
+
+        .ear-container img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .ear-overlay {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ear-overlay circle {
+            fill: rgba(0, 0, 0, 0.35);
+            stroke: rgb(0, 0, 0);
+            stroke-width: 3;
+            cursor: pointer;
+        }
+
+        .ear-overlay circle:hover {
+            fill: rgba(39, 22, 189, 0.7);
+        }
+
+        #infodiv {
+            white-space: pre-line;
+            background-color: rgb(49, 248, 255);
+            min-height: 100px;
+            margin-bottom: 20px;
+            overflow-wrap: anywhere;
+            padding: 10px;
+        }
+
+        #info {
+            font-size: 30px;
+            margin-top: 0;
+        }
+
+        #jsonUpload {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+
+        #dateControls {
+            margin-top: 15px;
+        }
+
+        #newDate {
+            width: 260px;
+            max-width: 90%;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 720px) {
+            .ear-container {
+                width: min(350px, 46vw);
+                height: min(350px, 46vw);
+            }
+        }
